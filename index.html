@@ -2,31 +2,30 @@
 <html>
 <head>
     <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0"
-    <title>Sria Banquet Hall Map</title>
+    <title>Mapbox Location Picker with Route</title>
     <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
-    <script src="https://api.mapbox.com/mapbox-gl-js/v2.6.1/mapbox-gl.js"></script>
-    <link href="https://api.mapbox.com/mapbox-gl-js/v2.6.1/mapbox-gl.css" rel="stylesheet">
-    <style>
-        body { margin: 0; padding: 0; }
-        #map { position: absolute; top: 0; bottom: 0; width: 100%; }
-    </style>
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.2.0/mapbox-gl.css" rel="stylesheet">
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.2.0/mapbox-gl.js"></script>
 </head>
 <body>
-    <div id="map"></div>
+    <div id="map" style="width: 100%; height: 500px;"></div>
     <script>
-         mapboxgl.accessToken ='pk.eyJ1IjoibWFuZGFsYXB1IiwiYSI6ImNsc3FkZGRtZTB3aDYya3FxeWNzY2xzMDcifQ.5pLPt_LLhI3xgbB_XjDgwQ'; 	
-
- // Replace with your Mapbox access token
-
-        const map = new mapboxgl.Map({
+        mapboxgl.accessToken ='pk.eyJ1IjoibWFuZGFsYXB1IiwiYSI6ImNsc3FkZGRtZTB3aDYya3FxeWNzY2xzMDcifQ.5pLPt_LLhI3xgbB_XjDgwQ'; // Replace with your own access token
+        var map = new mapboxgl.Map({
             container: 'map',
-            style: 'mapbox://styles/mapbox/streets-v11', // Use a base map style
-            center:  [78.34653002540557,17.49423417459829], // Longitude and latitude of Sria Banquet Hall in Miyapur
-            zoom: 15 // Adjust the zoom level as needed
+            style: 'mapbox://styles/mapbox/streets-v11',
+            center:  [78.34653002540557,17.49423417459829], // Hyderabad coordinates
+            zoom: 18
         });
 
-        // Add a marker for Sria Banquet Hall
+        // Add geolocation control
+        var geolocate = new mapboxgl.GeolocateControl({
+            positionOptions: {
+                enableHighAccuracy: true
+            },
+            trackUserLocation: true
+        });
+        map.addControl(geolocate);
         new mapboxgl.Marker()
             .setLngLat( [78.34653002540557,17.49423417459829])
             .addTo(map);
@@ -36,6 +35,63 @@
             .setLngLat([78.34653002540557,17.49423417459829])
             .setHTML('<h3>Sria Banquet Hall</h3><p>Miyapur, Hyderabad</p>')
             .addTo(map);
+
+
+        // Handle geolocation result
+        geolocate.on('geolocate', function (e) {
+            var userLocation = [e.coords.longitude, e.coords.latitude];
+            var userMarker = new mapboxgl.Marker()
+                .setLngLat(userLocation)
+                .addTo(map);
+
+            // Simulate a hardcoded destination (replace with your actual destination coordinates)
+            var destination =  [78.34653002540557,17.49423417459829]; // Example destination coordinates
+            new mapboxgl.Popup()
+            .setLngLat([e.coords.longitude,e.coords.latitude])
+            .setHTML('<h3>Your location</p>')
+            .addTo(map);
+            
+
+            // Draw a route line from user's location to the destination
+            var route = {
+                type: 'FeatureCollection',
+                features: [
+                    {
+                        type: 'Feature',
+                        properties: {},
+                        geometry: {
+                            type: 'LineString',
+                            coordinates: [userLocation, destination]
+                        }
+                    }
+                ]
+            };
+
+            map.addSource('route', {
+                type: 'geojson',
+                data: route
+            });
+
+            map.addLayer({
+                id: 'route',
+                type: 'line',
+                source: 'route',
+                layout: {
+                    'line-join': 'round',
+                    'line-cap': 'round'
+                },
+                paint: {
+                    'line-color': '#0074D9',
+                    'line-width': 4
+                }
+            });
+
+            // Fit the map view to show both user's location and destination
+            var bounds = new mapboxgl.LngLatBounds();
+            bounds.extend(userLocation);
+            bounds.extend(destination);
+            map.fitBounds(bounds, { padding: 50 });
+        });
     </script>
 </body>
 </html>
